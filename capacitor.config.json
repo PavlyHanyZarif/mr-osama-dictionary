@@ -1,0 +1,17 @@
+{
+  "appId": "com.mrosama.dictionary",
+  "appName": "القاموس الناطق",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f1923"
+    }
+  }
+}

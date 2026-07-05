@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="theme-color" content="#4ECDC4">
+  <link rel="manifest" href="manifest.json">
+  <title>القاموس الناطق - Mr. Osama</title>
+  <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;700&family=Fredoka+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display:flex; flex-direction:column; min-height:100vh; }
+    .login-wrap { flex:1; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .login-box {
+      background:var(--card-bg);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:32px 26px;
+      width:100%;
+      max-width:370px;
+      text-align:center;
+      border:3px solid var(--secondary);
+    }
+    .app-logo { font-size:3.8em; margin-bottom:5px; }
+    .app-title { font-family:'Fredoka One',cursive; font-size:2em; color:var(--primary); }
+    .app-subtitle { color:var(--muted); font-size:0.88em; margin:6px 0 22px; }
+    .pin-section h3 { font-size:0.97em; color:var(--text); margin-bottom:12px; }
+    .teacher-link { margin-top:20px; }
+    .teacher-link a { color:var(--muted); font-size:0.82em; text-decoration:none; transition:color 0.2s; }
+    .teacher-link a:hover { color:var(--secondary); }
+  </style>
+</head>
+<body>
+
+<header class="top-header">
+  <div style="display:flex;align-items:center;gap:10px;justify-content:center;">
+    <h1>📚 القاموس الناطق</h1>
+    <button onclick="toggleTheme()" id="themeBtn" class="theme-toggle-btn">☀️</button>
+  </div>
+  <div class="contact-links">
+    <a href="tel:+201004013488" class="phone">📞 01004013488</a>
+    <a href="https://wa.me/+201004013488" target="_blank" class="whatsapp">💬 واتساب</a>
+  </div>
+</header>
+
+<div class="offline-banner" id="offlineBanner">⚠️ أنت غير متصل بالإنترنت</div>
+
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="app-logo">📖</div>
+    <div class="app-title">Mr. Osama</div>
+    <div class="app-subtitle">القاموس الناطق - أدخل كودك</div>
+
+    <div class="pin-section">
+      <h3>🎒 أدخل الكود (4 أرقام)</h3>
+      <div class="pin-display">
+        <div class="pin-dot" id="sd0"></div>
+        <div class="pin-dot" id="sd1"></div>
+        <div class="pin-dot" id="sd2"></div>
+        <div class="pin-dot" id="sd3"></div>
+      </div>
+      <div style="text-align:center;margin-bottom:12px;">
+        <button onclick="toggleShow()" id="showBtn" class="show-toggle-btn">👁 إظهار</button>
+      </div>
+      <div class="pin-pad" id="studentPad"></div>
+      <div class="error-msg" id="studentError">❌ الكود غلط!</div>
+    </div>
+
+    <div class="teacher-link">
+      <a href="teacher.html">👨‍🏫 أنت المدرس؟ اضغط هنا</a>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p style="font-weight:bold;margin-top:15px;">جاري الدخول...</p>
+</div>
+
+<script src="supabase.min.js"></script>
+<script>
+const SUPABASE_URL = 'https://gmqjlpqsbhrlqxcnkiet.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-fAc2QUuPsWFPjS7cunk5g_Fge-oj3c';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let studentCode = '';
+let showMode = false;
+
+// ---- THEME ---- (dark default)
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('mr_theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isLight ? '🌙' : '☀️';
+}
+(function applyTheme() {
+  if (localStorage.getItem('mr_theme') === 'light') {
+    document.body.classList.add('light');
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = '🌙';
+  }
+})();
+
+// ---- OFFLINE ----
+window.addEventListener('online',  () => document.getElementById('offlineBanner').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
+if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('show');
+
+// ---- AUTO-LOGIN: if valid session exists, go straight to student ----
+(function checkExistingSession() {
+  const codeId   = localStorage.getItem('mr_student_code_id');
+  const gradesRaw = localStorage.getItem('mr_student_grades');
+  const sessionOk = localStorage.getItem('mr_session_ok');
+  if (codeId && gradesRaw && sessionOk === '1') {
+    window.location.replace('student.html');
+  }
+})();
+
+// ---- PIN PAD ----
+function buildPad(containerId, onKey) {
+  const pad = document.getElementById(containerId);
+  pad.innerHTML = '';
+  [1,2,3,4,5,6,7,8,9,'⌫',0,'✓'].forEach(key => {
+    const btn = document.createElement('button');
+    btn.className = 'pin-key' + (key === '⌫' ? ' delete' : '') + (key === 0 ? ' zero' : '');
+    btn.textContent = key;
+    btn.onclick = () => onKey(String(key));
+    pad.appendChild(btn);
+  });
+}
+
+function toggleShow() {
+  showMode = !showMode;
+  document.getElementById('showBtn').textContent = showMode ? '🙈 إخفاء' : '👁 إظهار';
+  updateDots(studentCode);
+}
+
+function updateDots(pin) {
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('sd' + i);
+    if (showMode && i < pin.length) {
+      el.classList.add('filled');
+      el.textContent = pin[i];
+      el.style.cssText = 'width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.1em;color:white;';
+    } else if (!showMode && i < pin.length) {
+      el.classList.add('filled');
+      el.textContent = '';
+      el.style.cssText = '';
+    } else {
+      el.classList.remove('filled');
+      el.textContent = '';
+      el.style.cssText = '';
+    }
+  }
+}
+
+buildPad('studentPad', async key => {
+  document.getElementById('studentError').classList.remove('show');
+  if (key === '⌫') { studentCode = studentCode.slice(0,-1); updateDots(studentCode); return; }
+  if (key === '✓') { if (studentCode.length === 4) await doLogin(); return; }
+  if (studentCode.length >= 4) return;
+  studentCode += key;
+  updateDots(studentCode);
+  if (studentCode.length === 4) await doLogin();
+});
+
+// ---- LOGIN ----
+async function doLogin() {
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+  try {
+    const { data: codeData, error } = await sb.from('student_codes')
+      .select('*').eq('code', studentCode).eq('is_active', true).single();
+
+    if (error || !codeData) { showError('❌ الكود غلط أو مش موجود!'); return; }
+
+    let deviceId = localStorage.getItem('mr_device_id');
+    if (!deviceId) {
+      deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      localStorage.setItem('mr_device_id', deviceId);
+    }
+
+    if (codeData.is_used && codeData.device_id && codeData.device_id !== deviceId) {
+      showError('❌ الكود ده اتستخدم على جهاز تاني!\nاطلب من المدرس نقل الجهاز.');
+      return;
+    }
+    if (!codeData.is_used) {
+      await sb.from('student_codes').update({
+        is_used: true, device_id: deviceId, used_at: new Date().toISOString()
+      }).eq('id', codeData.id);
+    }
+
+    localStorage.setItem('mr_student_code_id', codeData.id);
+    localStorage.setItem('mr_student_grades', JSON.stringify(codeData.grades));
+    localStorage.setItem('mr_student_code', studentCode);
+    localStorage.setItem('mr_session_ok', '1');
+    localStorage.removeItem('mr_preview_mode');
+    window.location.href = 'student.html';
+  } catch(e) {
+    showError('⚠️ خطأ في الاتصال - تأكد من الإنترنت');
+  } finally {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('studentError');
+  el.textContent = msg;
+  el.classList.add('show');
+  studentCode = '';
+  updateDots('');
+}
+
+// ---- SERVICE WORKER ----
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+    })
+    .catch(() => {});
+}
+</script>
+</body>
+</html>

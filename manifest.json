@@ -1,0 +1,20 @@
+{
+  "name": "القاموس الناطق - Mr. Osama",
+  "short_name": "Mr. Osama",
+  "description": "القاموس الناطق لتعلم اللغة الإنجليزية - يعمل أوفلاين",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1923",
+  "theme_color": "#4ECDC4",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "https://cdn.jsdelivr.net/npm/twemoji@14/assets/72x72/1f4d6.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "https://cdn.jsdelivr.net/npm/twemoji@14/assets/72x72/1f4d6.png",  "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "https://cdn.jsdelivr.net/npm/twemoji@14/assets/72x72/1f4d6.png",  "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["education"],
+  "lang": "ar",
+  "dir": "rtl"
+}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="theme-color" content="#4ECDC4">
+  <link rel="manifest" href="manifest.json">
+  <title>القاموس الناطق - الطالب</title>
+  <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;700&family=Fredoka+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top-header">
+  <div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <h1>📚 القاموس الناطق</h1>
+    <button onclick="toggleTheme()" id="themeBtn" class="theme-toggle-btn">☀️</button>
+  </div>
+  <div class="contact-links">
+    <button onclick="studentLogout()" style="background:#e53935;color:white;border:none;padding:6px 13px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.80em;touch-action:manipulation;">🚪 خروج</button>
+  </div>
+</header>
+
+<div class="preview-banner" id="previewBanner">
+  👁 وضع معاينة المدرس — كل المراحل مفتوحة — لا يتم حفظ تقدم
+  <button onclick="exitPreview()" style="background:rgba(255,255,255,0.25);border:none;color:white;padding:4px 12px;border-radius:20px;cursor:pointer;font-size:0.85em;touch-action:manipulation;">← خروج</button>
+</div>
+
+<div class="offline-banner" id="offlineBanner">⚠️ وضع بدون إنترنت - البيانات محفوظة محلياً</div>
+
+<div class="container">
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <!-- VIEW: Grade Selection -->
+  <div id="view-grades">
+    <div class="card secondary" style="margin-bottom:18px;text-align:center;padding:18px;">
+      <div style="font-size:2.6em;margin-bottom:7px;">🎒</div>
+      <h2 id="greetingTitle" style="color:var(--secondary);font-family:'Fredoka One',cursive;">أهلاً بيك!</h2>
+      <p style="color:var(--muted);margin-top:5px;font-size:0.88em;">اختر الصف اللي عايز تذاكر منه</p>
+    </div>
+    <div class="grades-display" id="gradesDisplay"></div>
+  </div>
+
+  <!-- VIEW: Lessons List -->
+  <div id="view-lessons" class="hidden">
+    <div class="card" style="margin-bottom:16px;">
+      <div id="gradeTitle"    style="font-size:1.25em;font-weight:bold;color:var(--secondary);margin-bottom:4px;"></div>
+      <div id="gradeSubtitle" style="color:var(--muted);font-size:0.87em;"></div>
+    </div>
+    <div id="lessonsList"></div>
+  </div>
+
+  <!-- VIEW: Lesson Content -->
+  <div id="view-lesson" class="hidden">
+    <div class="lesson-header-card" id="lessonHeaderCard">
+      <h2 id="lessonTitle">الدرس</h2>
+      <p  id="lessonSubtitle"></p>
+    </div>
+
+    <div class="controls-bar">
+      <div class="ctrl-group">
+        <label>🗣️</label>
+        <select id="voiceSelect"></select>
+      </div>
+      <div class="ctrl-group">
+        <label>🐢</label>
+        <input type="range" id="speedSlider" min="0.5" max="1.2" value="0.8" step="0.1" style="width:70px;">
+      </div>
+      <div class="ctrl-group">
+        <button class="play-all-btn" id="playAllBtn" onclick="playAllWords()" style="margin:0;padding:7px 14px;font-size:0.83em;">▶️ نطق الكل</button>
+        <button onclick="stopSpeaking()" style="background:var(--primary);color:white;border:none;padding:7px 12px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.83em;touch-action:manipulation;">🛑</button>
+      </div>
+    </div>
+
+    <div id="vocabSections"></div>
+
+    <div class="complete-section" id="completeSection">
+      <div style="margin-bottom:14px;">
+        <div class="completion-percent" id="completionPercent">0%</div>
+        <div class="progress-bar-wrap" style="margin:8px 0;">
+          <div class="progress-bar-fill" id="completionBar" style="width:0%"></div>
+        </div>
+        <div style="color:var(--muted);font-size:0.85em;" id="completionText">اسمع كل الكلمات عشان تكمل الدرس</div>
+      </div>
+      <button class="btn btn-success btn-lg btn-full" id="completeLessonBtn" onclick="completeLesson()" disabled>
+        🏆 أكملت الدرس!
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p style="font-weight:bold;margin-top:15px;">جاري التحميل...</p>
+</div>
+
+<script src="supabase.min.js"></script>
+<script src="student.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'SYNC_NOW') syncWithServer();
+  });
+}
+</script>
+</body>
+</html>
